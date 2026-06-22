@@ -757,7 +757,7 @@
   // ─── MAIN ─────────────────────────────────────────────────
   async function init() {
     try {
-      const response = await fetch('./content.md');
+      const response = await fetch('./assets/content.txt');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const text = await response.text();
 

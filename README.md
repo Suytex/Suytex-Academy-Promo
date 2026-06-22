@@ -6,16 +6,16 @@ Landing page estática para el curso. Diseño dark mode, responsive, sin framewo
 
 ## Editar el contenido
 
-Todo el texto vive en **`content.md`**. Puedes editarlo directo desde GitHub sin tocar el HTML.
+Todo el texto vive en **`assets/content.txt`**. Puedes editarlo directo desde GitHub sin tocar el HTML.
 
 ### Cómo hacerlo en 30 segundos
 
-1. Abre [`content.md`](./content.md) en GitHub.
+1. Abre [`assets/content.txt`](./assets/content.txt) en GitHub.
 2. Haz clic en el ícono ✏️ (Edit this file).
 3. Edita el texto que quieras.
 4. Haz **Commit changes** → la página se actualiza sola.
 
-### Estructura de `content.md`
+### Estructura de `assets/content.txt`
 
 El archivo tiene dos partes:
 
@@ -98,6 +98,7 @@ Luego abre `http://localhost:3000`.
 ```
 /
 ├── index.html        # Shell HTML + CSS + JS (no tocar para cambiar contenido)
-├── content.md        # TODO el contenido editable
+├── assets/
+│   └── content.txt   # TODO el contenido editable
 └── README.md         # Este archivo
 ```
