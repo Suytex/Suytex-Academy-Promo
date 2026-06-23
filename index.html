@@ -587,152 +587,167 @@
   function enhanceForWho() {
     const container = document.querySelector('.section--for-who .container');
     if (!container) return;
-    const h3s = container.querySelectorAll('h3');
-    if (h3s.length < 2) return;
+    try {
+      const h2   = container.querySelector(':scope > h2');
+      const h3s  = [...container.querySelectorAll(':scope > h3')];
+      if (h3s.length < 2) return;
 
-    const grid   = document.createElement('div');
-    grid.className = 'for-who-grid';
-    const yesCol = document.createElement('div');
-    yesCol.className = 'for-who-col for-who-yes';
-    const noCol  = document.createElement('div');
-    noCol.className = 'for-who-col for-who-no';
+      const grid   = document.createElement('div');
+      grid.className = 'for-who-grid';
+      const yesCol = document.createElement('div');
+      yesCol.className = 'for-who-col for-who-yes';
+      const noCol  = document.createElement('div');
+      noCol.className = 'for-who-col for-who-no';
 
-    let current = h3s[0];
-    while (current && current !== h3s[1]) {
-      const next = current.nextSibling;
-      yesCol.appendChild(current);
-      current = next;
+      // Snapshot before moving anything
+      const allEls = [...container.children];
+      let zone = 'skip';
+      for (const el of allEls) {
+        if (el === h2) continue;
+        if (el === h3s[0]) zone = 'yes';
+        if (el === h3s[1]) zone = 'no';
+        if (zone === 'yes') yesCol.appendChild(el);
+        else if (zone === 'no') noCol.appendChild(el);
+      }
+
+      // Pull the closing <p> (if any) out of noCol so it renders below the grid
+      const lastNoEl = noCol.lastElementChild;
+      const closingP = (lastNoEl && lastNoEl.tagName === 'P') ? noCol.removeChild(lastNoEl) : null;
+
+      grid.appendChild(yesCol);
+      grid.appendChild(noCol);
+
+      container.innerHTML = '';
+      if (h2) container.appendChild(h2);
+      container.appendChild(grid);
+      if (closingP) container.appendChild(closingP);
+    } catch (e) {
+      console.warn('enhanceForWho failed:', e);
     }
-    while (current) {
-      const next = current.nextSibling;
-      noCol.appendChild(current);
-      current = next;
-    }
-
-    grid.appendChild(yesCol);
-    grid.appendChild(noCol);
-
-    // Remaining top-level nodes (the closing paragraph)
-    const extras = [...container.childNodes];
-    container.appendChild(grid);
-    extras.forEach(n => container.appendChild(n));
   }
 
   // ─── POST-PROCESS: PRICING ────────────────────────────────
   function enhancePricing() {
     const container = document.querySelector('.section--pricing .container');
     if (!container) return;
+    try {
+      const card = document.createElement('div');
+      card.className = 'pricing-card';
 
-    const card = document.createElement('div');
-    card.className = 'pricing-card';
+      const nodes = [...container.childNodes];
+      let inCard = false;
+      const cardNodes = [];
+      const outerNodes = [];
 
-    const nodes = [...container.childNodes];
-    let inCard = false;
-    const cardNodes = [];
-    const outerNodes = [];
+      nodes.forEach(n => {
+        if (n.nodeName === 'H2') { outerNodes.push(n); inCard = true; }
+        else if (inCard) cardNodes.push(n);
+        else outerNodes.push(n);
+      });
 
-    nodes.forEach(n => {
-      if (n.nodeName === 'H2') { outerNodes.push(n); inCard = true; }
-      else if (inCard) cardNodes.push(n);
-      else outerNodes.push(n);
-    });
+      container.innerHTML = '';
+      outerNodes.forEach(n => container.appendChild(n));
+      cardNodes.forEach(n => card.appendChild(n));
 
-    container.innerHTML = '';
-    outerNodes.forEach(n => container.appendChild(n));
-    cardNodes.forEach(n => card.appendChild(n));
+      const pElements = [...card.querySelectorAll('p')];
+      pElements.forEach((p, i) => {
+        if (i === 0 && p.querySelector('strong')) p.classList.add('price-main');
+        else if (i === 1) p.classList.add('price-subtitle');
+        else if (i === 2 && p.querySelector('strong')) p.classList.add('price-seats');
+        else if (i === 3) p.classList.add('price-note');
+        else p.classList.add('price-closing');
+      });
 
-    const pElements = card.querySelectorAll('p');
-    pElements.forEach((p, i) => {
-      if (p.querySelector('strong') && i === 0) {
-        p.classList.add('price-main');
-      } else if (p.querySelector('strong') && i === 2) {
-        p.classList.add('price-seats');
-      } else if (i === 1) {
-        p.classList.add('price-subtitle');
-      } else if (i === 3) {
-        p.classList.add('price-note');
-      } else {
-        p.classList.add('price-closing');
-      }
-    });
-
-    container.appendChild(card);
+      container.appendChild(card);
+    } catch (e) {
+      console.warn('enhancePricing failed:', e);
+    }
   }
 
   // ─── POST-PROCESS: FAQ ACCORDION ─────────────────────────
   function enhanceFAQ() {
     const container = document.querySelector('.section--faq .container');
     if (!container) return;
+    try {
+      const h2    = container.querySelector('h2');
+      const paras = [...container.querySelectorAll('p')];
 
-    const h2 = container.querySelector('h2');
-    const paras = [...container.querySelectorAll('p')];
+      const faqList = document.createElement('div');
+      faqList.className = 'faq-list';
 
-    const faqList = document.createElement('div');
-    faqList.className = 'faq-list';
+      let i = 0;
+      while (i < paras.length) {
+        const p       = paras[i];
+        const strong  = p.querySelector('strong');
+        const isQ     = strong && p.textContent.trim() === strong.textContent.trim();
+        if (isQ) {
+          const qText = strong.textContent;
+          const aText = paras[i + 1] ? paras[i + 1].textContent : '';
 
-    let i = 0;
-    while (i < paras.length) {
-      const p = paras[i];
-      if (p.querySelector('strong') && p.textContent.trim() === p.querySelector('strong').textContent.trim()) {
-        const qText = p.querySelector('strong').textContent;
-        const aText = paras[i + 1] ? paras[i + 1].textContent : '';
-
-        const item  = document.createElement('div');
-        item.className = 'faq-item';
-
-        const qEl = document.createElement('div');
-        qEl.className = 'faq-q';
-        qEl.textContent = qText;
-
-        const aEl = document.createElement('div');
-        aEl.className = 'faq-a';
-        const aInner = document.createElement('div');
-        aInner.className = 'faq-a-inner';
-        aInner.textContent = aText;
-        aEl.appendChild(aInner);
-
-        qEl.addEventListener('click', () => {
-          item.classList.toggle('open');
-        });
-
-        item.appendChild(qEl);
-        item.appendChild(aEl);
-        faqList.appendChild(item);
-        i += 2;
-      } else {
-        i++;
+          const item   = document.createElement('div');
+          item.className = 'faq-item';
+          const qEl    = document.createElement('div');
+          qEl.className = 'faq-q';
+          qEl.textContent = qText;
+          const aEl    = document.createElement('div');
+          aEl.className = 'faq-a';
+          const aInner = document.createElement('div');
+          aInner.className = 'faq-a-inner';
+          aInner.textContent = aText;
+          aEl.appendChild(aInner);
+          qEl.addEventListener('click', () => item.classList.toggle('open'));
+          item.appendChild(qEl);
+          item.appendChild(aEl);
+          faqList.appendChild(item);
+          i += 2;
+        } else {
+          i++;
+        }
       }
-    }
 
-    container.innerHTML = '';
-    if (h2) container.appendChild(h2);
-    container.appendChild(faqList);
+      container.innerHTML = '';
+      if (h2) container.appendChild(h2);
+      container.appendChild(faqList);
+    } catch (e) {
+      console.warn('enhanceFAQ failed:', e);
+    }
   }
 
   // ─── POST-PROCESS: CTA BUTTON ─────────────────────────────
   function enhanceCTA(meta) {
     const container = document.querySelector('.section--cta .container');
     if (!container) return;
+    try {
+      // Wire up any existing links to whatsapp
+      container.querySelectorAll('a').forEach(a => {
+        if (meta.whatsapp) {
+          a.href = meta.whatsapp;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.classList.add('btn-cta');
+        }
+      });
 
-    // Wire up any existing links to whatsapp
-    container.querySelectorAll('a').forEach(a => {
-      if (meta.whatsapp) {
-        a.href = meta.whatsapp;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.classList.add('btn-cta');
+      // Add button if no link exists
+      if (!container.querySelector('.btn-cta') && meta.whatsapp) {
+        const btn = document.createElement('a');
+        btn.href      = meta.whatsapp;
+        btn.target    = '_blank';
+        btn.rel       = 'noopener noreferrer';
+        btn.className = 'btn-cta';
+        btn.textContent = '💬 Escríbeme "QUIERO" y reserva tu cupo';
+
+        // Find the direct child of container that contains (or is) an <em>,
+        // so insertBefore gets a valid sibling — not a nested descendant.
+        const emEl = container.querySelector('em');
+        let refNode = emEl;
+        while (refNode && refNode.parentNode !== container) {
+          refNode = refNode.parentNode;
+        }
+        container.insertBefore(btn, refNode || null);
       }
-    });
-
-    // Add button if no link exists
-    if (!container.querySelector('.btn-cta') && meta.whatsapp) {
-      const btn = document.createElement('a');
-      btn.href    = meta.whatsapp;
-      btn.target  = '_blank';
-      btn.rel     = 'noopener noreferrer';
-      btn.className = 'btn-cta';
-      btn.textContent = '💬 Escríbeme "QUIERO" y reserva tu cupo';
-      container.insertBefore(btn, container.querySelector('em') || null);
+    } catch (e) {
+      console.warn('enhanceCTA failed:', e);
     }
   }
 
